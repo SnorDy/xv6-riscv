@@ -149,6 +149,9 @@ UPROGS=\
 	$U/_task1_b\
 	$U/_task2\
 
+	$U/_hello\
+	$U/_sum\
+	$U/_sum_asm\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
