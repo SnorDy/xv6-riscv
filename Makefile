@@ -145,6 +145,9 @@ UPROGS=\
 	$U/_logstress\
 	$U/_forphan\
 	$U/_dorphan\
+	$U/_task1_a\
+	$U/_task1_b\
+	$U/_task2\
 	$U/_hello\
 	$U/_sum\
 	$U/_sum_asm\
