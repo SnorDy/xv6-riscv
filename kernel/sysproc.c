@@ -6,6 +6,82 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "vm.h"
+#include "procinfo.h"
+
+extern struct proc proc[];
+
+int is_valid_user_pointer(uint64 addr, int size) {
+    if (addr == 0 || addr >= PLIC)  
+        return 0;
+    struct proc *p = myproc();
+    for(uint64 offset = 0; offset < size; offset += PGSIZE) {
+        if(walkaddr(p->pagetable, addr + offset) == 0)
+            return 0;
+    }
+    return 1;
+}
+uint64
+sys_ps_listinfo(void)
+{
+    struct procinfo *plist;
+    int lim;
+    int nprocs = 0;
+    int copied = 0;
+    struct proc *p;
+    
+    argaddr(0, (uint64*)&plist);
+    argint(1, &lim);
+    
+    for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if(p->state != UNUSED) {
+            nprocs++;
+        }
+        release(&p->lock);
+    }
+    if (plist == 0) {
+        return nprocs;
+    }
+    if (!is_valid_user_pointer((uint64)plist, lim * sizeof(struct procinfo))) {
+        return -2; 
+    }
+    
+    if (nprocs > lim) {
+        return -1; 
+    }
+    
+    for(p = proc; p < proc + NPROC && copied < lim; p++) {
+        acquire(&p->lock);
+        
+        if(p->state != UNUSED) {
+            struct procinfo info;
+            info.pid = p->pid;
+            safestrcpy(info.name, p->name, sizeof(info.name));
+            info.state = p->state;
+            info.ppid = 0;
+            info.pname[0] = '\0';
+            
+            if(p->parent != 0) {
+                acquire(&wait_lock);
+                if(p->parent->state != UNUSED) {
+                    info.ppid = p->parent->pid;
+                    safestrcpy(info.pname, p->parent->name, sizeof(info.pname));
+                }
+                release(&wait_lock);
+            }
+            if (copyout(myproc()->pagetable, (uint64)(plist + copied), 
+                        (char*)&info, sizeof(info)) < 0) {
+                release(&p->lock);
+                return -2;
+            }
+            
+            copied++;
+        }
+        release(&p->lock);
+    }
+    
+    return copied;
+}
 
 uint64
 sys_exit(void)
