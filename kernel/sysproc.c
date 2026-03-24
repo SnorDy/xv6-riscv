@@ -25,35 +25,40 @@ sys_ps_listinfo(void)
 {
     struct procinfo *plist;
     int lim;
-    int nprocs = 0;
     int copied = 0;
     struct proc *p;
     
     argaddr(0, (uint64*)&plist);
     argint(1, &lim);
     
-    for(p = proc; p < &proc[NPROC]; p++) {
-        acquire(&p->lock);
-        if(p->state != UNUSED) {
-            nprocs++;
-        }
-        release(&p->lock);
-    }
     if (plist == 0) {
+        int nprocs = 0;
+        for(p = proc; p < &proc[NPROC]; p++) {
+            acquire(&p->lock);
+            if(p->state != UNUSED) {
+                nprocs++;
+            }
+            release(&p->lock);
+        }
         return nprocs;
     }
+    
     if (!is_valid_user_pointer((uint64)plist, lim * sizeof(struct procinfo))) {
-        return -2; 
+        return -2;
     }
     
-    if (nprocs > lim) {
-        return -1; 
-    }
+    acquire(&wait_lock);
     
-    for(p = proc; p < proc + NPROC && copied < lim; p++) {
+    for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         
         if(p->state != UNUSED) {
+            if (copied >= lim) {
+                release(&p->lock);
+                release(&wait_lock);      
+                return -1;
+            }
+            
             struct procinfo info;
             info.pid = p->pid;
             safestrcpy(info.name, p->name, sizeof(info.name));
@@ -61,25 +66,25 @@ sys_ps_listinfo(void)
             info.ppid = 0;
             info.pname[0] = '\0';
             
-            if(p->parent != 0) {
-                acquire(&wait_lock);
-                if(p->parent->state != UNUSED) {
-                    info.ppid = p->parent->pid;
-                    safestrcpy(info.pname, p->parent->name, sizeof(info.pname));
-                }
-                release(&wait_lock);
+            if (p->parent != 0 && p->parent->state != UNUSED) {
+                info.ppid = p->parent->pid;
+                safestrcpy(info.pname, p->parent->name, sizeof(info.pname));
             }
+            
             if (copyout(myproc()->pagetable, (uint64)(plist + copied), 
                         (char*)&info, sizeof(info)) < 0) {
                 release(&p->lock);
+                release(&wait_lock); 
                 return -2;
             }
             
             copied++;
         }
+        
         release(&p->lock);
     }
     
+    release(&wait_lock);
     return copied;
 }
 

@@ -3,13 +3,15 @@
 #include "kernel/procinfo.h"
 
 #define PROC_UNUSED 0
-#define PROC_SLEEPING 1
-#define PROC_RUNNABLE 2
-#define PROC_RUNNING 3
-#define PROC_ZOMBIE 4
+#define PROC_USED 1
+#define PROC_SLEEPING 2
+#define PROC_RUNNABLE 3
+#define PROC_RUNNING 4
+#define PROC_ZOMBIE 5
 
 const char* state_names[] = {
     [PROC_UNUSED]    = "UNUSED",
+    [PROC_USED]      = "USED",
     [PROC_SLEEPING]  = "SLEEP",
     [PROC_RUNNABLE]  = "RUNNABLE",
     [PROC_RUNNING]   = "RUNNING",
@@ -18,7 +20,7 @@ const char* state_names[] = {
 
 void print_process(struct procinfo *p, int max_pid, int max_name, int max_state, int max_ppid) {
     char *state_str = "UNKNOWN";
-    if (p->state >= 0 && p->state < 5) {
+    if (p->state >= 0 && p->state < 6) {
         state_str = (char*)state_names[p->state];
     }
     
@@ -49,34 +51,50 @@ void print_process(struct procinfo *p, int max_pid, int max_name, int max_state,
 }
 
 int main(void) {
-    int nprocs = ps_listinfo(0, 0);
-    if (nprocs < 0) {
-        fprintf(2, "ps: failed to get process count\n");
-        exit(1);
+    int size = 4;
+    struct procinfo *procs = 0;
+    int ret = -1;
+    
+    while (1) {
+        int nprocs = ps_listinfo(0, 0);
+        if (nprocs < 0) {
+            fprintf(2, "ps: failed to get process count\n");
+            exit(1);
+        }
+        
+        if (size < nprocs + 1) {
+            size = nprocs + 1;
+        }
+        
+        procs = malloc(size * sizeof(struct procinfo));
+        if (procs == 0) {
+            fprintf(2, "ps: malloc failed\n");
+            exit(1);
+        }
+        
+        ret = ps_listinfo(procs, size);
+        
+        if (ret >= 0) {
+            break;
+        } else if (ret == -1) {
+            free(procs);
+            size *= 2;
+            continue;
+        } else {
+            fprintf(2, "ps: failed to get process list\n");
+            free(procs);
+            exit(1);
+        }
     }
     
-    struct procinfo *procs = malloc(nprocs * sizeof(struct procinfo));
-    if (procs == 0) {
-        fprintf(2, "ps: malloc failed\n");
-        exit(1);
-    }
-
-    int ret = ps_listinfo(procs, nprocs);
-    if (ret < 0) {
-        fprintf(2, "ps: failed to get process list\n");
-        free(procs);
-        exit(1);
-    }
-    
-   
-    int max_pid = 3;    
-    int max_name = 4;   
-    int max_state = 5;  
-    int max_ppid = 4;   
+    int max_pid = 3;
+    int max_name = 4;
+    int max_state = 5;
+    int max_ppid = 4;
     
     for (int i = 0; i < ret; i++) {
         char *state_str = "UNKNOWN";
-        if (procs[i].state >= 0 && procs[i].state < 5) {
+        if (procs[i].state >= 0 && procs[i].state < 6) {
             state_str = (char*)state_names[procs[i].state];
         }
         
@@ -101,22 +119,18 @@ int main(void) {
     
     printf("PID");
     for (int i = 0; i < max_pid - 3; i++) printf(" ");
-    
     printf(" | ");
-   
+    
     printf("NAME");
     for (int i = 0; i < max_name - 4; i++) printf(" ");
-    
     printf(" | ");
     
     printf("STATE");
     for (int i = 0; i < max_state - 5; i++) printf(" ");
-    
     printf(" | ");
     
     printf("PPID");
     for (int i = 0; i < max_ppid - 4; i++) printf(" ");
-    
     printf(" | ");
     
     printf("PNAME\n");
@@ -129,8 +143,9 @@ int main(void) {
     printf("-+-");
     for (int i = 0; i < max_ppid; i++) printf("-");
     printf("-+-");
-    for (int i = 0; i < 20; i++) printf("-"); 
+    for (int i = 0; i < 20; i++) printf("-");
     printf("\n");
+    
     for (int i = 0; i < ret; i++) {
         print_process(&procs[i], max_pid, max_name, max_state, max_ppid);
     }
