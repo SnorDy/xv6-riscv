@@ -156,6 +156,8 @@ UPROGS=\
     $U/_ps\
     $U/_hexdump\
     $U/_hexwrite\
+	$U/_testpg\
+	
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
