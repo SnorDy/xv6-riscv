@@ -19,17 +19,22 @@ int main(int argc, char *argv[]) {
   }
 
   char hex[] = "0123456789ABCDEF";
-  unsigned char buf[1];
-  
-  for (int i = 0; i < count; i++) {
-    int n = read(fd, buf, 1);
-    if (n < 0) {
+  unsigned char buf[256];
+  if(count > (int)sizeof(buf)) count = (int)sizeof(buf);
+
+  int got = 0;
+  while(got < count) {
+    int n = read(fd, buf + got, count - got);
+    if(n < 0) {
       fprintf(2, "\nRead error\n");
-      break;
+      close(fd);
+      exit(1);
     }
-    if (n == 0) break;
-    
-    printf("%c%c ", hex[(buf[0] >> 4) & 0xF], hex[buf[0] & 0xF]);
+    if(n == 0) break;
+    got += n;
+  }
+  for(int i = 0; i < got; i++) {
+    printf("%c%c ", hex[(buf[i] >> 4) & 0xF], hex[buf[i] & 0xF]);
   }
   printf("\n");
   

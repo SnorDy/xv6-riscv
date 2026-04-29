@@ -21,10 +21,23 @@ main(void)
     open("console", O_RDWR);
   }
 
-  mknod("null", 2, 0);
-  mknod("zero", 2, 1);
-  mknod("urandom", 2, 2);
-  mknod("nullstat", 2, 3);
+  int fd;
+  if((fd = open("null", O_RDONLY)) < 0)
+    mknod("null", 2, 0);
+  else
+    close(fd);
+  if((fd = open("zero", O_RDONLY)) < 0)
+    mknod("zero", 2, 1);
+  else
+    close(fd);
+  if((fd = open("urandom", O_RDONLY)) < 0)
+    mknod("urandom", 2, 2);
+  else
+    close(fd);
+  if((fd = open("nullstat", O_RDONLY)) < 0)
+    mknod("nullstat", 2, 3);
+  else
+    close(fd);
   
   dup(0);  // stdout
   dup(0);  // stderr

@@ -9,7 +9,8 @@
 #include "defs.h"
 
 
-struct spinlock pseudolock;
+struct spinlock pseudolock_seed;
+struct spinlock pseudolock_stat;
 uint32 prng_seed = 0x12345678; 
 uint64 nullstat_count = 0;
 
@@ -20,8 +21,7 @@ int pseudoread(int minor, int user_dst, uint64 dst, int n) {
     return 0;
   } 
   else if(minor == 1) {
-    char buf[128];
-    memset(buf, 0, sizeof(buf));
+    static char buf[128];
     int total = 0;
     while(total < n) {
       int chunk = n - total;
@@ -38,12 +38,12 @@ int pseudoread(int minor, int user_dst, uint64 dst, int n) {
       int chunk = n - total;
       if(chunk > sizeof(buf)) chunk = sizeof(buf);
       
-      acquire(&pseudolock);
+      acquire(&pseudolock_seed);
       for(int i = 0; i < chunk; i++) {
         prng_seed = prng_seed * 1103515245 + 12345;
         buf[i] = (prng_seed >> 16) & 0xFF;
       }
-      release(&pseudolock);
+      release(&pseudolock_seed);
 
       if(either_copyout(user_dst, dst + total, buf, chunk) == -1) break;
       total += chunk;
@@ -53,9 +53,9 @@ int pseudoread(int minor, int user_dst, uint64 dst, int n) {
   else if(minor == 3) {
     if(n != sizeof(uint64)) return -1;
     
-    acquire(&pseudolock);
+    acquire(&pseudolock_stat);
     uint64 val = nullstat_count;
-    release(&pseudolock);
+    release(&pseudolock_stat);
     
     if(either_copyout(user_dst, dst, &val, sizeof(val)) == -1) return -1;
     return sizeof(val);
@@ -79,16 +79,16 @@ int pseudowrite(int minor, int user_src, uint64 src, int n) {
     uint32 new_seed;
     if(either_copyin(&new_seed, user_src, src, sizeof(new_seed)) == -1) return -1;
     
-    acquire(&pseudolock);
+    acquire(&pseudolock_seed);
     prng_seed = new_seed;
-    release(&pseudolock);
+    release(&pseudolock_seed);
     
     return n;
   } 
   else if(minor == 3) {
-    acquire(&pseudolock);
+    acquire(&pseudolock_stat);
     nullstat_count += n;
-    release(&pseudolock);
+    release(&pseudolock_stat);
     return n;
   }
 
@@ -96,7 +96,8 @@ int pseudowrite(int minor, int user_src, uint64 src, int n) {
 }
 
 void pseudoinit(void) {
-  initlock(&pseudolock, "pseudo");
+  initlock(&pseudolock_seed, "pseudo_seed");
+  initlock(&pseudolock_stat, "pseudo_stat");
   devsw[2].read = pseudoread;
   devsw[2].write = pseudowrite;
 }

@@ -47,8 +47,16 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (write(fd, buf, len / 2) != len / 2) {
-    fprintf(2, "Write error\n");
+  int total = 0;
+  int bytes = len / 2;
+  while(total < bytes) {
+    int r = write(fd, buf + total, bytes - total);
+    if(r <= 0) {
+      fprintf(2, "Write error\n");
+      close(fd);
+      exit(1);
+    }
+    total += r;
   }
   
   close(fd);
