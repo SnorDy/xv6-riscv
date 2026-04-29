@@ -233,3 +233,8 @@ uint64 sys_check_pte_flags(void) {
   struct proc *p = myproc();
   return check_pte_flags(p->pagetable, va, size, flags);
 }
+
+uint64 sys_rtc(void)
+{
+    return rtc_get_time();
+}
