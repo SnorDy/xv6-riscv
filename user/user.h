@@ -31,6 +31,7 @@ int pgtable_dump(void);
 int clear_pte_flags(void *buffer, uint size, int flags);
 int check_pte_flags(void *buffer, uint size, int flags);
 
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
@@ -54,3 +55,4 @@ void printf(const char*, ...) __attribute__ ((format (printf, 1, 2)));
 void* malloc(uint);
 void free(void*);
 
+uint64 rtc(void);

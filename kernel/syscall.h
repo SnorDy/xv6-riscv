@@ -25,3 +25,4 @@
 #define SYS_pgtable_dump    24
 #define SYS_clear_pte_flags 25
 #define SYS_check_pte_flags 26
+#define SYS_rtc 27

@@ -30,6 +30,7 @@ OBJS = \
   $K/plic.o \
   $K/virtio_disk.o \
   $K/pseudo.o \
+  $K/rtc.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -53,6 +54,7 @@ TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' 
 	echo "***" 1>&2; exit 1; fi)
 endif
 
+QEMU_RTC ?= base=localtime
 QEMU = qemu-system-riscv64
 MIN_QEMU_VERSION = 7.2
 
@@ -157,6 +159,8 @@ UPROGS=\
     $U/_hexdump\
     $U/_hexwrite\
 	$U/_testpg\
+	$U/_date \
+	
 	
 
 fs.img: mkfs/mkfs README $(UPROGS)
@@ -186,6 +190,7 @@ QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nogr
 QEMUOPTS += -global virtio-mmio.force-legacy=false
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+QEMUOPTS += -rtc $(QEMU_RTC)
 
 qemu: check-qemu-version $K/kernel fs.img
 	$(QEMU) $(QEMUOPTS)
