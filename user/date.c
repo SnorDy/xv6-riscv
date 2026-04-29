@@ -10,30 +10,26 @@ static const char *month_names[] = {
     "July", "August", "September", "October", "November", "December"
 };
 
-static int
-is_leap_year(int year)
+static int is_leap_year(int year)
 {
     return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
-static int
-days_in_month(int month, int year)
+static int days_in_month(int month, int year)
 {
     if (month == 1 && is_leap_year(year))
         return 29;
     return month_days[month];
 }
 
-static void
-print_padded2(int val)
+static void print_padded2(int val)
 {
     if (val < 10)
         printf("0");
     printf("%d", val);
 }
 
-static void
-print_padded3(int val)
+static void print_padded3(int val)
 {
     if (val < 100)
         printf("0");
@@ -42,8 +38,7 @@ print_padded3(int val)
     printf("%d", val);
 }
 
-static void
-print_padded9(int val)
+static void print_padded9(int val)
 {
     if (val < 100000000) printf("0");
     if (val < 10000000)  printf("0");
@@ -56,8 +51,7 @@ print_padded9(int val)
     printf("%d", val);
 }
 
-static void
-seconds_to_datetime(uint64 seconds, int *year, int *month, int *day,
+static void seconds_to_datetime(uint64 seconds, int *year, int *month, int *day,
                     int *hour, int *minute, int *second)
 {
     *second = seconds % 60;
@@ -91,8 +85,7 @@ seconds_to_datetime(uint64 seconds, int *year, int *month, int *day,
     *day = (int)days + 1;
 }
 
-int
-main(void)
+int main(void)
 {
     uint64 nanoseconds = rtc();
     
