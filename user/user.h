@@ -56,3 +56,6 @@ void* malloc(uint);
 void free(void*);
 
 uint64 rtc(void);
+
+int dmesg(char *buf, int maxlen);
+int logctrl(int mask, int ticks);

@@ -48,3 +48,5 @@ entry("pgtable_dump");
 entry("clear_pte_flags");
 entry("check_pte_flags");
 entry("rtc");
+entry("dmesg");
+entry("logctrl");

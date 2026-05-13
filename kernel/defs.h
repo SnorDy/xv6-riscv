@@ -186,6 +186,12 @@ void            virtio_disk_intr(void);
 
 void            pseudoinit(void);
 uint64  rtc_get_time(void);
+
+void            dmesginit(void);
+void            pr_msg(const char*, ...);
+uint64          sys_dmesg(void);
+uint64          sys_logctrl(void);
+void            check_log_timer(void);
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 

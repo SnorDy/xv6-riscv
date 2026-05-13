@@ -31,6 +31,7 @@ OBJS = \
   $K/virtio_disk.o \
   $K/pseudo.o \
   $K/rtc.o \
+  $K/dmesg.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -160,6 +161,8 @@ UPROGS=\
     $U/_hexwrite\
 	$U/_testpg\
 	$U/_date \
+	$U/_dmesg\
+	$U/_logctrl\
 	
 	
 

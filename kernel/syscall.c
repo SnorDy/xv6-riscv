@@ -6,6 +6,7 @@
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
+#include "dmesg.h"
 
 // Fetch the uint64 at addr from the current process.
 int
@@ -107,6 +108,10 @@ extern uint64 sys_pgtable_dump(void);
 extern uint64 sys_clear_pte_flags(void);
 extern uint64 sys_check_pte_flags(void);
 extern uint64 sys_rtc(void);
+extern uint64 sys_dmesg(void);
+extern uint64 sys_logctrl(void);
+
+
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -138,6 +143,9 @@ static uint64 (*syscalls[])(void) = {
 [SYS_clear_pte_flags] sys_clear_pte_flags,
 [SYS_check_pte_flags] sys_check_pte_flags,
 [SYS_rtc]   sys_rtc,
+[SYS_dmesg] sys_dmesg,
+[SYS_logctrl] sys_logctrl,
+
 
 };
 
@@ -149,6 +157,9 @@ syscall(void)
 
   num = p->trapframe->a7;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    if(log_mask & LOG_SYSCALL) {
+      pr_msg("SYSCALL: pid=%d name=%s syscall_num=%d", p->pid, p->name, num);
+    }
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
     p->trapframe->a0 = syscalls[num]();
