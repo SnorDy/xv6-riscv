@@ -26,3 +26,5 @@
 #define SYS_clear_pte_flags 25
 #define SYS_check_pte_flags 26
 #define SYS_rtc 27
+#define SYS_dmesg 28
+#define SYS_logctrl 29
