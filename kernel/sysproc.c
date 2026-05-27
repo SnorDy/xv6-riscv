@@ -197,3 +197,39 @@ sys_add(void)
     argint(1, &b);
     return a + b;
 }
+
+
+uint64 sys_pgtable_dump(void) {
+  struct proc *p = myproc();
+  vmprint_dump(p->pagetable);
+  return 0;
+}
+
+uint64 sys_clear_pte_flags(void) {
+  uint64 va, size;
+  int flags;
+  
+  argaddr(0, &va);
+  argaddr(1, &size);
+  argint(2, &flags);
+  
+  struct proc *p = myproc();
+  int res = clear_pte_flags(p->pagetable, va, size, flags);
+  
+  if (res == 0) {
+    sfence_vma();
+  }
+  return res;
+}
+
+uint64 sys_check_pte_flags(void) {
+  uint64 va, size;
+  int flags;
+  
+  argaddr(0, &va);
+  argaddr(1, &size);
+  argint(2, &flags);
+  
+  struct proc *p = myproc();
+  return check_pte_flags(p->pagetable, va, size, flags);
+}

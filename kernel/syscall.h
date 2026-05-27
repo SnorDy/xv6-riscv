@@ -22,3 +22,6 @@
 #define SYS_close  21
 #define SYS_add    22
 #define SYS_ps_listinfo 23
+#define SYS_pgtable_dump    24
+#define SYS_clear_pte_flags 25
+#define SYS_check_pte_flags 26

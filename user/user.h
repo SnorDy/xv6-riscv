@@ -27,6 +27,9 @@ int pause(int);
 int uptime(void);
 int add(int, int);
 int ps_listinfo(struct procinfo*, int);
+int pgtable_dump(void);
+int clear_pte_flags(void *buffer, uint size, int flags);
+int check_pte_flags(void *buffer, uint size, int flags);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -50,3 +53,4 @@ void printf(const char*, ...) __attribute__ ((format (printf, 1, 2)));
 // umalloc.c
 void* malloc(uint);
 void free(void*);
+

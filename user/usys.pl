@@ -44,3 +44,6 @@ entry("pause");
 entry("uptime");
 entry("add");
 entry("ps_listinfo");
+entry("pgtable_dump");
+entry("clear_pte_flags");
+entry("check_pte_flags");

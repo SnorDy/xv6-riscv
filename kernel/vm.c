@@ -484,3 +484,106 @@ ismapped(pagetable_t pagetable, uint64 va)
   }
   return 0;
 }
+
+
+void print_hex_padded(uint64 val, int digits) {
+  char buf[16];
+  char *hex_chars = "0123456789ABCDEF";
+
+  for(int i = 0; i < digits; i++) {
+    buf[digits - 1 - i] = hex_chars[val & 0xF];
+    val >>= 4;
+  }
+  
+  for(int i = 0; i < digits; i++) {
+    printf("%c", buf[i]);
+  }
+}
+
+void vmprint_level(pagetable_t pagetable, int level) {
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      for(int j = 0; j < level; j++) {
+        printf("......... ");
+      }
+      printf("0x");
+      print_hex_padded(i, 3);
+      printf(" -> 0x");
+      print_hex_padded(PTE2PA(pte), 16);
+      printf(" ");
+  
+      printf("%c%c%c%c%c%c%c\n",
+        (pte & PTE_R) ? 'R' : '_',
+        (pte & PTE_W) ? 'W' : '_',
+        (pte & PTE_X) ? 'X' : '_',
+        (pte & PTE_U) ? 'U' : '_',
+        (pte & PTE_G) ? 'G' : '_',
+        (pte & PTE_A) ? 'A' : '_',
+        (pte & PTE_D) ? 'D' : '_');
+
+      if((pte & (PTE_R|PTE_W|PTE_X)) == 0){
+        uint64 child = PTE2PA(pte);
+        vmprint_level((pagetable_t)child, level + 1);
+      }
+    }
+  }
+}
+
+void vmprint_dump(pagetable_t pagetable) {
+  printf("PAGETABLE 0x");
+  print_hex_padded((uint64)pagetable, 16);
+  printf("\n");
+  vmprint_level(pagetable, 0);
+}
+
+int clear_pte_flags(pagetable_t pagetable, uint64 va, uint64 size, int flags) {
+  if(size == 0) return 0;
+  if(flags & ~(PTE_A | PTE_D)) return -1;
+  if(va >= MAXVA || va + size > MAXVA || va + size < va) return -1;
+
+  uint64 a = PGROUNDDOWN(va);
+  uint64 last = PGROUNDDOWN(va + size - 1);
+
+  uint64 curr = a;
+  for(;;) {
+    pte_t *pte = walk(pagetable, curr, 0);
+    if(pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0) return -1;
+    if(curr == last) break;
+    curr += PGSIZE;
+  }
+  curr = a;
+  for(;;) {
+    pte_t *pte = walk(pagetable, curr, 0);
+    *pte &= ~flags;
+    if(curr == last) break;
+    curr += PGSIZE;
+  }
+  return 0;
+}
+
+int check_pte_flags(pagetable_t pagetable, uint64 va, uint64 size, int flags) {
+  if(size == 0) return 0;
+  if(flags & ~(PTE_A | PTE_D)) return -1; 
+  if(va >= MAXVA || va + size > MAXVA || va + size < va) return -1;
+
+  uint64 a = PGROUNDDOWN(va);
+  uint64 last = PGROUNDDOWN(va + size - 1);
+
+  uint64 curr = a;
+  for(;;) {
+    pte_t *pte = walk(pagetable, curr, 0);
+    if(pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0) return -1;
+    if(curr == last) break;
+    curr += PGSIZE;
+  }
+
+  curr = a;
+  for(;;) {
+    pte_t *pte = walk(pagetable, curr, 0);
+    if(*pte & flags) return 1; 
+    if(curr == last) break;
+    curr += PGSIZE;
+  }
+  return 0;
+}
